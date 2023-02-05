@@ -1,0 +1,57 @@
+service: docker-selenium-lambda-status-pay-sii 
+
+provider:
+  name: aws
+  stage: ${opt:stage, 'prod'}
+  region: ${env:AWS_REGION, 'us-east-2'}
+  ecr:
+    images:
+      img:
+        path: ./
+        platform: linux/amd64
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - 'sqs:ListQueues'
+            - 'sqs:CreateQueue'
+            - 'sqs:DeleteQueue'
+            - 'sqs:GetQueueAttributes'
+            - 'sqs:SendMessage'
+            - 'sqs:DeleteMessage'
+            - 'sqs:ReceiveMessage'
+            - 's3:PutObject'
+            - dynamodb:PutItem
+            - dynamodb:BatchGet*
+            - dynamodb:DescribeStream
+            - dynamodb:DescribeTable
+            - dynamodb:Get*
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:BatchWrite*
+            - dynamodb:CreateTable
+            - dynamodb:Delete*
+            - dynamodb:Update*
+          Resource: "*"
+
+functions:
+  status-payment:
+    events:
+      - sqs:
+          arn: 'arn:aws:sqs:us-east-2:091218001582:ajfr-taxsmart-dev-data-manager-test'
+          batchSize: 10
+          enabled: 'true'
+    environment:
+      url_sii: 'https://zeusr.sii.cl//AUT2000/InicioAutenticacion/IngresoRutClave.html?https://misiir.sii.cl/cgi_misii/siihome.cgi'
+      xget_test: 'https://misiir.sii.cl/cgi_misii/CViewCarta.cgi?year=0&opc=32&VIEW=1&MODE=getIva'
+      close_session: 'https://zeusr.sii.cl/cgi_AUT2000/autTermino.cgi'
+      sqsDataManager: 'https://sqs.us-east-2.amazonaws.com/091218001582/managerdata-test'
+      tableSii: "ajfr-taxsmart-dev-Sii"
+
+    timeout: 800
+    # If you experience any errors such as Chrome crashing or not being available you might need to increase the storage available to your Lambda Function. See #102
+    memorySize: 1024
+    image:
+      name: img
+    
