@@ -8,6 +8,7 @@ import os
 import json
 import boto3
 import time
+import datetime
 
 url_sii = os.environ['url_sii']
 xget_test = os.environ['xget_test']
@@ -31,7 +32,7 @@ def is_alert_present(self):
         return True
     except:
         try:
-            boton =  self.find_element(By.XPATH, '/html/body/div[1]/div/div/div[3]/button')   # Finding the referenced element
+            boton =  self.find_element(By.XPATH, '/html/body/div[posYear]/div/div/div[3]/button')   # Finding the referenced element
             boton.click()
 
         except:
@@ -89,8 +90,14 @@ def handler(event=None, context=None):
                 ano = event['ano']
                 mes = event['mes']
             
+            today = datetime.date.today()
+            year = today.year
+            if (ano == year):
+                posYear = 0
+            else:
+                posYear = 1          
             
-            keyPeriodo = str(ano)+str(mes);
+            keyPeriodo = str(ano)+str(mes).zfill(2)
 
             mesLetra = nombreMes[int(mes)]
             driver.get(url_sii)
@@ -113,15 +120,27 @@ def handler(event=None, context=None):
             enviar.send_keys(Keys.RETURN)
             time.sleep(4)
             linea += 1
+            # Verificar clave
+            try:
+                texto = driver.find_element(By.XPATH,'//div[@id="titulo"]').text
+                if ('La Clave Tributaria ingresada no es correcta' in texto):
+                    print('Error Password: ', sii_user)
+                    return     
+            except Exception as e: print(e)
+
+
             #driver.execute_script("window.open('');")
             #time.sleep(2)
-            #driver.switch_to.window(driver.window_handles[1])
+            #driver.switch_to.window(driver.window_handles[posYear])
             # Aqui verificar si existe ventena y cerrar
-            try:
-                driver.switch_to.alert.accept()
-            except UnexpectedAlertPresentException:
-                driver.switch_to.alert.accept()
-            
+            #try:
+            #    driver.switch_to.alert.accept()
+            #except UnexpectedAlertPresentException:
+            #    #driver.switch_to.alert.accept()
+            #    print("error Ventana")
+            linea += 1
+            if is_alert_present(driver):
+                print('Ventana cerrada')
             if is_alert_present(driver):
                 print('Ventana cerrada')
             time.sleep(2)
@@ -140,46 +159,50 @@ def handler(event=None, context=None):
                 print('Cierto', parsed_json['glosaRespuesta'])
                 if (parsed_json['glosaRespuesta'] == 'Error: Autenticacion'):
                     print("Error de Autenticacion o error de clave")
+                    continue
+            try:
+                if (parsed_json.get("data")): 
+                    #print(parsed_json)
+                    print('Mes: ', parsed_json['data']['response']['data']['detalle'][mesLetra][posYear]['mes'])
+                    linea += 1
+                    print('Año: ', parsed_json['data']['response']['data']['detalle'][mesLetra][posYear]['columna'])
+                    linea += 1
+                    print('Rut: ', parsed_json['data']['response']['data']['detalle'][mesLetra][posYear]['datosDeclaracion']['rut'])
+                    linea += 1
+                    print('Folio: ', parsed_json['data']['response']['data']['detalle'][mesLetra][posYear]['datosDeclaracion']['folio'])
+                    linea += 1
 
-            if (parsed_json.get("data")): 
-                #print(parsed_json)
-                print('Mes: ', parsed_json['data']['response']['data']['detalle'][mesLetra][1]['mes'])
-                linea += 1
-                print('Año: ', parsed_json['data']['response']['data']['detalle'][mesLetra][1]['columna'])
-                linea += 1
-                print('Rut: ', parsed_json['data']['response']['data']['detalle'][mesLetra][1]['datosDeclaracion']['rut'])
-                linea += 1
-                print('Folio: ', parsed_json['data']['response']['data']['detalle'][mesLetra][1]['datosDeclaracion']['folio'])
-                linea += 1
-
-                response = {
-                    'rut': parsed_json['data']['response']['data']['detalle'][mesLetra][1]['datosDeclaracion']['rut'],
-                    'month': parsed_json['data']['response']['data']['detalle'][mesLetra][1]['mes'],
-                    'year': parsed_json['data']['response']['data']['detalle'][mesLetra][1]['columna'],
-                    'folio': parsed_json['data']['response']['data']['detalle'][mesLetra][1]['datosDeclaracion']['folio']
-                }
-                linea += 1
-                valorFolio = parsed_json['data']['response']['data']['detalle'][mesLetra][1]['datosDeclaracion']['folio']
-                linea += 1
-                response = Sii.update_item(
-                    Key={
-                        'cliente': cliente,
-                        'periodorut': keyPeriodo+sii_user
-                    },
-                    UpdateExpression='set #newPeriodo = :valPeriodo, #newRut = :valRut, #newAttr = :val',
-                    ExpressionAttributeNames={ 
-                        '#newPeriodo': 'periodo',
-                        '#newRut': 'rut',
-                        '#newAttr': 'folio'
-                    },
-                    ExpressionAttributeValues={
-                        ':val': valorFolio,
-                        ':valPeriodo': keyPeriodo,
-                        ':valRut': sii_user
-                    },
-                    ConditionExpression= 'attribute_exists(#newAttr) OR attribute_not_exists(#newAttr)'
-                )
-                print('respuesta:', response)
+                    response = {
+                        'rut': parsed_json['data']['response']['data']['detalle'][mesLetra][posYear]['datosDeclaracion']['rut'],
+                        'month': parsed_json['data']['response']['data']['detalle'][mesLetra][posYear]['mes'],
+                        'year': parsed_json['data']['response']['data']['detalle'][mesLetra][posYear]['columna'],
+                        'folio': parsed_json['data']['response']['data']['detalle'][mesLetra][posYear]['datosDeclaracion']['folio']
+                    }
+                    linea += 1
+                    valorFolio = parsed_json['data']['response']['data']['detalle'][mesLetra][posYear]['datosDeclaracion']['folio']
+                    linea += 1
+                    response = Sii.update_item(
+                        Key={
+                            'cliente': cliente,
+                            'periodorut': keyPeriodo+sii_user
+                        },
+                        UpdateExpression='set #newPeriodo = :valPeriodo, #newRut = :valRut, #newAttr = :val',
+                        ExpressionAttributeNames={ 
+                            '#newPeriodo': 'periodo',
+                            '#newRut': 'rut',
+                            '#newAttr': 'folio'
+                        },
+                        ExpressionAttributeValues={
+                            ':val': valorFolio,
+                            ':valPeriodo': keyPeriodo,
+                            ':valRut': sii_user
+                        },
+                        ConditionExpression= 'attribute_exists(#newAttr) OR attribute_not_exists(#newAttr)'
+                    )
+                    print('respuesta:', response)
+     
+            except:
+                print('Error:', sii_user, ' No data to process')
                 ## El nombre de la cola SQS FIFO
                 #queue_name = sqsDataManager
 #
@@ -206,8 +229,7 @@ def handler(event=None, context=None):
                 #    MessageBody=json.dumps(message_body),
                 #    DelaySeconds = 4
                 #)
-                linea += 1
-                print('Respuesta SQS y Folio: ',valorFolio, response)
+                
                 linea += 1
             driver.get(close_session)
 

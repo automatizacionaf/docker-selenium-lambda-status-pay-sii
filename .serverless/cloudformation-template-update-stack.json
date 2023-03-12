@@ -194,7 +194,7 @@
       "Type": "AWS::Lambda::Function",
       "Properties": {
         "Code": {
-          "ImageUri": "091218001582.dkr.ecr.us-east-2.amazonaws.com/serverless-docker-selenium-lambda-status-pay-sii-prod@sha256:bc7caa2b99bdfd854b03e45b2f2bcee5cebe6872c9af9a6f4de320dfd32da16e"
+          "ImageUri": "091218001582.dkr.ecr.us-east-2.amazonaws.com/serverless-docker-selenium-lambda-status-pay-sii-prod@sha256:62d38ccf715cb3d404790a760cbc6f3f7ac653f350e9c7215d53f517bac23994"
         },
         "PackageType": "Image",
         "FunctionName": "docker-selenium-lambda-status-pay-sii-prod-status-payment",
@@ -220,14 +220,14 @@
         "StatusDashpaymentLogGroup"
       ]
     },
-    "StatusDashpaymentLambdaVersion7syBdMClyckAQs3Dq0TZI5PyXYur1H0gWG08jtVwg": {
+    "StatusDashpaymentLambdaVersioniFwojdPFadbJJwU37TldbBiLGVTOOMa69cAJPJFNGc": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "StatusDashpaymentLambdaFunction"
         },
-        "CodeSha256": "bc7caa2b99bdfd854b03e45b2f2bcee5cebe6872c9af9a6f4de320dfd32da16e"
+        "CodeSha256": "62d38ccf715cb3d404790a760cbc6f3f7ac653f350e9c7215d53f517bac23994"
       }
     },
     "StatusDashpaymentEventSourceMappingSQSAjfrtaxsmartdevdatamanagertest": {
@@ -260,7 +260,7 @@
     "StatusDashpaymentLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "StatusDashpaymentLambdaVersion7syBdMClyckAQs3Dq0TZI5PyXYur1H0gWG08jtVwg"
+        "Ref": "StatusDashpaymentLambdaVersioniFwojdPFadbJJwU37TldbBiLGVTOOMa69cAJPJFNGc"
       },
       "Export": {
         "Name": "sls-docker-selenium-lambda-status-pay-sii-prod-StatusDashpaymentLambdaFunctionQualifiedArn"
